@@ -1,5 +1,8 @@
 pipeline {
   agent any
+  parameters {
+    booleanParam(name: 'RC', defaultValue: false, description: 'Is this a Release Candidate?')
+  }
   environment {
     VERSION='0.1.0'
     VERSION_RC="rc.2"
@@ -17,9 +20,12 @@ pipeline {
       }
     }
     stage('Build') {
+      environment {
+          VERSION_SUFFIX = "${sh(script:'if [ "${RC}" == "false" ] ; then echo -n "${VERSION_RC}+ci.${BUILD_NUMBER}"; else echo -n "${VERSION_RC}"; fi', returnStdout: true)}"
+      }
       steps {
-        echo "Building version ${VERSION} with suffix ${VERSION_RC}"
-        sh 'dotnet build -p:VersionPrefix="${VERSION}" --version-suffix "${VERSION_RC}" ./src/Pi.Web/Pi.Web.csproj' 
+        echo "Building version ${VERSION} with suffix ${VERSION_SUFFIX}"
+        sh 'dotnet build -p:VersionPrefix="${VERSION}" --version-suffix "${VERSION_SUFFIX}" ./src/Pi.Web/Pi.Web.csproj' 
       }
     }
     stage('Unit Tests') {
@@ -36,6 +42,15 @@ pipeline {
     stage('Smoke Tests') {
       steps {
         sh 'dotnet ./src/Pi.Web/bin/Debug/netcoreapp3.1/Pi.Web.dll'
+      }
+    }
+    stage('Publish') {
+      when {
+        expression { return params.RC }
+      }
+      steps {
+        sh 'dotnet build -p:VersionPrefix="${VERSION}" --version-suffix "${VERSION_RC}" ./src/Pi.Web/Pi.Web.csproj -o ./out'  
+        archiveArtifacts('out/')
       }
     }
   }
