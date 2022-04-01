@@ -16,5 +16,25 @@ pipeline {
         '''
       }
     }
+    stage('Build') {
+      steps {
+        echo "Building version ${VERSION} with suffix ${VERSION_RC}"
+        sh 'dotnet build -p:VersionPrefix="${VERSION}" --version-suffix "${VERSION_RC}" ./src/Pi.Web/Pi.Web.csproj' 
+      }
+    }
+    stage('Unit Tests') {
+      steps {
+        dir('./src') {
+          sh '''
+            dotnet test --loger "trx;LogFileName=Pi.Math.trx" Pi.Math.Tests/Pi.Math.Tests.csproj
+            dotnet test --loger "trx;LogFileName=Pi.Runtime.trx" Pi.Runtime.Tests/Pi.Runtime.Tests.csproj
+          '''
+          mstest testResultsFile:"**/*.trx", keepLongStdio: true
+        }
+      }
+    }
+    stage('Smoke Tests') {
+      sh 'dotnet ./src/Pi.Web/bin/Debug/netcoreapp3.1/Pi.Web.dll'
+    }
   }
 }
