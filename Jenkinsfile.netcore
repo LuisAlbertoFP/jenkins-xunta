@@ -26,8 +26,8 @@ pipeline {
       steps {
         dir('./src') {
           sh '''
-            dotnet test --loger "trx;LogFileName=Pi.Math.trx" Pi.Math.Tests/Pi.Math.Tests.csproj
-            dotnet test --loger "trx;LogFileName=Pi.Runtime.trx" Pi.Runtime.Tests/Pi.Runtime.Tests.csproj
+            dotnet test --logger "trx;LogFileName=Pi.Math.trx" Pi.Math.Tests/Pi.Math.Tests.csproj
+            dotnet test --logger "trx;LogFileName=Pi.Runtime.trx" Pi.Runtime.Tests/Pi.Runtime.Tests.csproj
           '''
           mstest testResultsFile:"**/*.trx", keepLongStdio: true
         }
